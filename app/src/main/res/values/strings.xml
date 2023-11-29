@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">OfflineOCR</string>
+    <string name="app_title">Offline OCR Tester</string>
+    <string name="btn_title_extract">Extract Value</string>
+    <string name="btn_title_camera">Take</string>
+    <string name="btn_title_retake">Retake</string>
+    <string name="btn_title_close">back</string>
+
+</resources>
