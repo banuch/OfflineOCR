@@ -5,5 +5,11 @@
     <string name="btn_title_camera">Take</string>
     <string name="btn_title_retake">Retake</string>
     <string name="btn_title_close">back</string>
+    <string name="meter_not_detected">Meter not Detected</string>
+    <string name="meter_detected">Meter Detected</string>
+    <string name="kwh_value_not_found">kwh value not found</string>
+    <string name="toggle_switch">Boxes</string>
+    <string name="energy_meter_found">Energy meter Found</string>
+    <string name="click_on_camera_or_gallery_icon"> </string>
 
 </resources>

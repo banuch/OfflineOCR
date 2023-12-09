@@ -20,7 +20,6 @@ import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -29,8 +28,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.SeekBar;
+import android.widget.Switch;
 import android.widget.TextView;
-import android.widget.Toast;
+
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.mediapipe.tasks.components.containers.Category;
@@ -59,9 +59,12 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
     EditText txtResult;
     Bitmap imgBitmap;
 
+    boolean boxFlag;
+
     TextView lblStatus;
     FloatingActionButton fabCamera,fabGallery;
     Button btnMeterDetect, btnExtract;
+    Switch aSwitchBox;
     private Uri image_uri;
     private SeekBar seekBar;
     private final float CONFIDENCE_THRESHOLD = 0.3f;
@@ -78,7 +81,11 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
         lblStatus=findViewById(R.id.lblStatus);
         fabCamera=findViewById(R.id.fab_Camera);
         fabGallery=findViewById(R.id.fab_gallery);
+        aSwitchBox=findViewById(R.id.toggleSwitchBox);
         txtResult.setEnabled(false);
+
+        boxFlag=false;
+        aSwitchBox.setChecked(false);
 
         Intent intent1 = getIntent();
         String image_file_Name = intent1.getStringExtra("filename");
@@ -99,10 +106,26 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
 
         }
 
+        aSwitchBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            // isChecked will be true if the switch is checked, false otherwise
+            if (isChecked) {
 
+                boxFlag=true;
+                Log.d(TAG,"Boxes are Enabled");
+                // Switch is checked
+                // Add your code here for the checked state
+            } else {
+                boxFlag=false;
+                Log.d(TAG,"Boxes are Disabled");
+                // Switch is unchecked
+                // Add your code here for the unchecked state
+            }
+        });
 
 
         fabGallery.setOnClickListener(view -> {
+
+            txtResult.setText("");
             // Handle the click event here
             //Toast.makeText(MainActivity.this, "FloatingActionButton clicked", Toast.LENGTH_SHORT).show();
             Intent galleryIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
@@ -138,16 +161,32 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
             startActivity(intent);
         });
 
-
-
         btnExtract.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // Handle button 1 click
-                objectDetectorHelper.setCurrentModel("offline_ocr.tflite");
+                objectDetectorHelper.setCurrentModel("meter_detect.tflite");
                 objectDetectorHelper.setupObjectDetector();
-                Log.d(TAG, "offline_ocr model Selected ...");
-                doInference();
+                Log.d(TAG, "Meter Object Detector model Selected ...");
+
+
+
+                doInference("meter_detect");
+
+                Log.d(TAG, "Result Flag Value: "+resultFlag);
+
+                if (resultFlag.contains("reading")) {
+                    Log.d(TAG, "Meter Detected");
+                    lblStatus.setText(R.string.meter_detected);
+                    // Handle button 1 click
+                    objectDetectorHelper.setCurrentModel("offline_ocr.tflite");
+                    objectDetectorHelper.setupObjectDetector();
+                    Log.d(TAG, "offline_ocr model Selected ...");
+                    doInference("offline_ocr");
+
+                } else {
+                    lblStatus.setText(R.string.meter_not_detected);
+                }
             }
         });
 
@@ -165,7 +204,7 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
 
                 float f=(float)val/100;
 
-                lblStatus.setText("Confidence Level: " + String.valueOf(f));
+                lblStatus.setText(String.format("Confidence Level: %s", String.valueOf(f)));
             }
 
             @Override
@@ -180,7 +219,7 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
 
                 float f=(float)val/100;
 
-                lblStatus.setText("Confidence Level: " + String.valueOf(f));
+                lblStatus.setText(String.format("Confidence Level: %s", String.valueOf(f)));
 
                 // Handle button 1 click
                 objectDetectorHelper.setCurrentModel("offline_ocr.tflite");
@@ -188,7 +227,7 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
                 objectDetectorHelper.setThreshold(f);
 
                 Log.d(TAG, "offline_ocr model Selected ...");
-                doInference();
+                doInference("offline_ocr");
 
                 // This method is invoked after the user finishes moving the SeekBar
                 //Toast.makeText(MainActivity.this, "Seekbar value: " + seekBar.getProgress(), Toast.LENGTH_SHORT).show();
@@ -267,13 +306,16 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
 
             Log.d(TAG, "Orientation: "+ getOrientation(bitmap));
 
-            imgBitmap=rotateBitmap(imgBitmap,90);
+
+            if(getOrientation(bitmap)==0){
+                Log.d(TAG, "Orientation not required ");
+            }
+            else{
+                imgBitmap=rotateBitmap(imgBitmap,90);
+            }
 
 
             innerImage.setImageBitmap(imgBitmap);
-
-
-
 
             // doInference();
         }
@@ -284,7 +326,7 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
             Bitmap bitmap = uriToBitmap(image_uri);
             rotateBitmap(bitmap);
             innerImage.setImageBitmap(bitmap);
-            doInference();
+            doInference("offline_ocr");
 
         }
     }
@@ -315,7 +357,7 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
     }
 
     //Passing image to the model, getting the results and drawing rectangles
-    public void doInference() {
+    public void doInference(String model_type) {
 
 //        Bitmap bitmap = uriToBitmap(image_uri);
 //        bitmap=rotateBitmap(bitmap);
@@ -371,6 +413,7 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
                 }
 
             }
+
             String kwh = "";
 
             Log.d(TAG, "Sorted Values are:......");
@@ -386,21 +429,41 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
 
             }
 
+
             Log.d(TAG, "kwh value: " + kwh);
 
-            txtResult.setText(kwh);
 
-            if (kwh.isEmpty()) {
-                Log.d(TAG, "No Result Found");
-                lblStatus.setText("Meter not Detected");
-            } else {
+            if(model_type.contains("meter_detect")){
 
                 if (kwh.contentEquals("reading")) {
                     resultFlag = kwh;
+                    lblStatus.setText(R.string.energy_meter_found);
+                }
+                else{
+                    resultFlag = kwh;
+                    lblStatus.setText("Energy Meter not Found");
                 }
 
-                innerImage.setImageBitmap(mutableBmp);
             }
+
+
+            if(model_type.contains("offline_ocr")){
+                if (kwh.isEmpty()) {
+                    Log.d(TAG, "No Result Found");
+                    lblStatus.setText(R.string.kwh_value_not_found);
+                } else {
+                    txtResult.setText(kwh);
+
+                    if(boxFlag){
+                        innerImage.setImageBitmap(mutableBmp);
+                    }
+
+                }
+            }
+
+
+
+
 
 
 

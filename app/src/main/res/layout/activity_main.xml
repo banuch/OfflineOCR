@@ -30,18 +30,33 @@
         android:layout_below="@+id/lblTile"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="15dp"
+        android:textSize="20sp"
+        android:layout_marginBottom="16dp"
         android:src="@drawable/meter" />
+
+    <Switch
+        android:id="@+id/toggleSwitchBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/imgMeter"
+        android:layout_centerHorizontal="true"
+        android:text="@string/toggle_switch"
+        android:textColor="@color/purple_200"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp"
+        tools:ignore="UseSwitchCompatOrMaterialXml" />
 
     <EditText
         android:id="@+id/textResult"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:layout_below="@+id/imgMeter"
+        android:layout_below="@+id/toggleSwitchBox"
         android:layout_marginTop="20dp"
-
+        android:textAlignment="center"
         android:hint="kwh value"
         android:textColor="@color/purple_700"
         android:textSize="20sp"
+        android:layout_marginBottom="16dp"
         android:textStyle="bold" />
 
     <Button
@@ -50,7 +65,8 @@
         android:layout_height="57dp"
         android:layout_below="@+id/textResult"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
         android:text="@string/btn_title_extract" />
 
 
@@ -60,8 +76,9 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/btnExtract"
         android:layout_marginTop="20dp"
-        android:text="click on camera or gallery icon"
+        android:text="@string/click_on_camera_or_gallery_icon"
         android:textColor="@color/teal_700"
+        android:textAlignment="center"
         android:textSize="20sp"
         android:textStyle="bold" />
 
@@ -70,7 +87,10 @@
         android:layout_width="411dp"
         android:layout_height="42dp"
         android:layout_above="@id/fab_Camera"
-        android:layout_margin="20dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="20dp"
         android:max="100"
         android:progress="50" />
 
