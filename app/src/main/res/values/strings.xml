@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">OfflineOCR</string>
     <string name="app_title">Offline OCR Tester</string>
-    <string name="btn_title_extract">Extract Value</string>
+    <string name="btn_title_extract">Extract</string>
     <string name="btn_title_camera">Take</string>
     <string name="btn_title_retake">Retake</string>
     <string name="btn_title_close">back</string>
@@ -11,5 +11,11 @@
     <string name="toggle_switch">Boxes</string>
     <string name="energy_meter_found">Energy meter Found</string>
     <string name="click_on_camera_or_gallery_icon"> </string>
-
+    <string name="detect_meter">detect meter</string>
+    <string name="meter_detection_is_enabled">Meter detection is enabled</string>
+    <string name="meter_detection_is_disabled1">meter detection is disabled</string>
+    <string name="boxes_are_enabled">Boxes are Enabled</string>
+    <string name="boxes_are_disabled">Boxes are Disabled</string>
+    <string name="save">Save</string>
+    <string name="load_image_first">Load image First</string>
 </resources>

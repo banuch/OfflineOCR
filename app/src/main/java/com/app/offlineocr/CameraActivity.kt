@@ -143,9 +143,6 @@ class CameraActivity : AppCompatActivity() {
             imgFileName
         )
 
-
-
-
         // Create output options object which contains file + metadata
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
@@ -158,7 +155,6 @@ class CameraActivity : AppCompatActivity() {
                 override fun onError(exc: ImageCaptureException) {
                     Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
                 }
-
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     val savedUri = Uri.fromFile(photoFile)
                     onImageCaptured(savedUri)
@@ -217,7 +213,7 @@ class CameraActivity : AppCompatActivity() {
             // Select back camera as a default
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-            val viewPort = ViewPort.Builder(Rational(350, 100), Surface.ROTATION_0).build()
+            val viewPort = ViewPort.Builder(Rational(4, 3), Surface.ROTATION_0).build()
             val useCaseGroup = UseCaseGroup.Builder()
                 .addUseCase(preview)
                 .addUseCase(imageCapture!!)

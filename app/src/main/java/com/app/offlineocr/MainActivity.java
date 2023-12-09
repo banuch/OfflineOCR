@@ -59,12 +59,12 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
     EditText txtResult;
     Bitmap imgBitmap;
 
-    boolean boxFlag;
+    boolean boxFlag,meterFlag,loadFlag;
 
     TextView lblStatus;
     FloatingActionButton fabCamera,fabGallery;
     Button btnMeterDetect, btnExtract;
-    Switch aSwitchBox;
+    Switch aSwitchBox,aSwitchDetectMeter;
     private Uri image_uri;
     private SeekBar seekBar;
     private final float CONFIDENCE_THRESHOLD = 0.3f;
@@ -82,6 +82,13 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
         fabCamera=findViewById(R.id.fab_Camera);
         fabGallery=findViewById(R.id.fab_gallery);
         aSwitchBox=findViewById(R.id.toggleSwitchBox);
+        aSwitchDetectMeter=findViewById(R.id.tsDetectMeter);
+
+        aSwitchDetectMeter.setChecked(true);
+
+        meterFlag=true;
+        loadFlag=false;
+
         txtResult.setEnabled(false);
 
         boxFlag=false;
@@ -93,6 +100,8 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
         Log.d(TAG,"Received File name: "+image_file_Name);
 
         if(image_file_Name!=null){
+
+            loadFlag=true;
 
             String imagePath =  getOutputDirectory(getApplicationContext()).toString();
 
@@ -106,17 +115,38 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
 
         }
 
+
+        aSwitchDetectMeter.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            // isChecked will be true if the switch is checked, false otherwise
+            if (isChecked) {
+
+                meterFlag=true;
+                Log.d(TAG,"Meter detection is enabled");
+                lblStatus.setText(R.string.meter_detection_is_enabled);
+                // Switch is checked
+                // Add your code here for the checked state
+            } else {
+                meterFlag=false;
+                lblStatus.setText(R.string.meter_detection_is_disabled1);
+                Log.d(TAG,"Boxes are Disabled");
+                // Switch is unchecked
+                // Add your code here for the unchecked state
+            }
+        });
+
         aSwitchBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
             // isChecked will be true if the switch is checked, false otherwise
             if (isChecked) {
 
                 boxFlag=true;
                 Log.d(TAG,"Boxes are Enabled");
+                lblStatus.setText(R.string.boxes_are_enabled);
                 // Switch is checked
                 // Add your code here for the checked state
             } else {
                 boxFlag=false;
                 Log.d(TAG,"Boxes are Disabled");
+                lblStatus.setText(R.string.boxes_are_disabled);
                 // Switch is unchecked
                 // Add your code here for the unchecked state
             }
@@ -124,6 +154,7 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
 
 
         fabGallery.setOnClickListener(view -> {
+
 
             txtResult.setText("");
             // Handle the click event here
@@ -164,29 +195,46 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
         btnExtract.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Handle button 1 click
-                objectDetectorHelper.setCurrentModel("meter_detect.tflite");
-                objectDetectorHelper.setupObjectDetector();
-                Log.d(TAG, "Meter Object Detector model Selected ...");
 
+                if(loadFlag){
+                    if(meterFlag)
+                    {
+                        // Handle button 1 click
+                        objectDetectorHelper.setCurrentModel("meter_detect.tflite");
+                        objectDetectorHelper.setupObjectDetector();
+                        Log.d(TAG, "Meter Object Detector model Selected ...");
 
+                        doInference("meter_detect");
 
-                doInference("meter_detect");
+                        Log.d(TAG, "Result Flag Value: "+resultFlag);
 
-                Log.d(TAG, "Result Flag Value: "+resultFlag);
+                        if (resultFlag.contains("reading")) {
+                            Log.d(TAG, "Meter Detected");
+                            lblStatus.setText(R.string.meter_detected);
+                            // Handle button 1 click
+                            objectDetectorHelper.setCurrentModel("offline_ocr.tflite");
+                            objectDetectorHelper.setupObjectDetector();
+                            Log.d(TAG, "offline_ocr model Selected ...");
+                            doInference("offline_ocr");
 
-                if (resultFlag.contains("reading")) {
-                    Log.d(TAG, "Meter Detected");
-                    lblStatus.setText(R.string.meter_detected);
-                    // Handle button 1 click
-                    objectDetectorHelper.setCurrentModel("offline_ocr.tflite");
-                    objectDetectorHelper.setupObjectDetector();
-                    Log.d(TAG, "offline_ocr model Selected ...");
-                    doInference("offline_ocr");
+                        } else {
+                            lblStatus.setText(R.string.meter_not_detected);
+                        }
 
-                } else {
-                    lblStatus.setText(R.string.meter_not_detected);
+                    }
+                    else{
+
+                        objectDetectorHelper.setCurrentModel("offline_ocr.tflite");
+                        objectDetectorHelper.setupObjectDetector();
+                        Log.d(TAG, "offline_ocr model Selected ...");
+                        doInference("offline_ocr");
+                    }
                 }
+                else{
+                    lblStatus.setText(R.string.load_image_first);
+                }
+
+
             }
         });
 
@@ -293,11 +341,14 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+        loadFlag=true;
 
         lblStatus.setText("");
 
         if (requestCode == RESULT_LOAD_IMAGE && resultCode == RESULT_OK && data != null) {
             image_uri = data.getData();
+
+            loadFlag=true;
 
 
             Bitmap bitmap = uriToBitmap(image_uri);
@@ -327,6 +378,8 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
             rotateBitmap(bitmap);
             innerImage.setImageBitmap(bitmap);
             doInference("offline_ocr");
+
+            loadFlag=true;
 
         }
     }
