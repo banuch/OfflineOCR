@@ -213,7 +213,7 @@ class CameraActivity : AppCompatActivity() {
             // Select back camera as a default
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-            val viewPort = ViewPort.Builder(Rational(4, 3), Surface.ROTATION_0).build()
+            val viewPort = ViewPort.Builder(Rational(350, 100), Surface.ROTATION_0).build()
             val useCaseGroup = UseCaseGroup.Builder()
                 .addUseCase(preview)
                 .addUseCase(imageCapture!!)

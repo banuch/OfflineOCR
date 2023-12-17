@@ -43,6 +43,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -54,6 +55,8 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
     private static final String TAG = "Detect OCR";
     public static final int IMAGE_CAPTURE_CODE = 654;
     private static final int PERMISSION_CODE = 321;
+
+    int orientation=0;
     public String resultFlag;
     ImageView innerImage;
     EditText txtResult;
@@ -105,12 +108,33 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
 
             String imagePath =  getOutputDirectory(getApplicationContext()).toString();
 
+            try {
+                orientation=getExifRotation(getApplicationContext(),Uri.fromFile(new File(imagePath+"/"+image_file_Name)));
+                Log.d(TAG,"orientation: "+orientation);
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+
             Bitmap bitmap = BitmapFactory.decodeFile(imagePath+"/"+image_file_Name);
+
+           // bitmap=resizeBitmap(bitmap,640,640);
+
+            Log.d(TAG,"after resie:"+bitmap.getHeight()+" X "+ bitmap.getWidth());
+
             imgBitmap=bitmap;
 
             if(bitmap!=null){
-                bitmap=rotateBitmap(bitmap,90);
-                innerImage.setImageBitmap(bitmap);
+
+                if(orientation==90){
+                    bitmap=rotateBitmap(bitmap,90);
+                    innerImage.setImageBitmap(bitmap);
+                }
+                else{
+                    innerImage.setImageBitmap(bitmap);
+                }
+
             }
 
         }
@@ -263,22 +287,61 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
 
-                int val=seekBar.getProgress();
 
-                float f=(float)val/100;
+                if(loadFlag){
+                    if(meterFlag)
+                    {
+                        // Handle button 1 click
+                        objectDetectorHelper.setCurrentModel("meter_detect.tflite");
+                        objectDetectorHelper.setupObjectDetector();
+                        Log.d(TAG, "Meter Object Detector model Selected ...");
 
-                lblStatus.setText(String.format("Confidence Level: %s", String.valueOf(f)));
+                        doInference("meter_detect");
 
-                // Handle button 1 click
-                objectDetectorHelper.setCurrentModel("offline_ocr.tflite");
-                objectDetectorHelper.setupObjectDetector();
-                objectDetectorHelper.setThreshold(f);
+                        Log.d(TAG, "Result Flag Value: "+resultFlag);
 
-                Log.d(TAG, "offline_ocr model Selected ...");
-                doInference("offline_ocr");
+                        if (resultFlag.contains("reading")) {
+                            Log.d(TAG, "Meter Detected");
+                            lblStatus.setText(R.string.meter_detected);
+                            // Handle button 1 click
+                            objectDetectorHelper.setCurrentModel("offline_ocr.tflite");
+                            objectDetectorHelper.setupObjectDetector();
+                            Log.d(TAG, "offline_ocr model Selected ...");
+                            doInference("offline_ocr");
 
-                // This method is invoked after the user finishes moving the SeekBar
-                //Toast.makeText(MainActivity.this, "Seekbar value: " + seekBar.getProgress(), Toast.LENGTH_SHORT).show();
+                        } else {
+                            lblStatus.setText(R.string.meter_not_detected);
+                        }
+
+                    }
+                    else{
+
+                        objectDetectorHelper.setCurrentModel("offline_ocr.tflite");
+                        objectDetectorHelper.setupObjectDetector();
+                        Log.d(TAG, "offline_ocr model Selected ...");
+                        doInference("offline_ocr");
+                    }
+                }
+                else{
+                    lblStatus.setText(R.string.load_image_first);
+                }
+
+//                int val=seekBar.getProgress();
+//
+//                float f=(float)val/100;
+//
+//                lblStatus.setText(String.format("Confidence Level: %s", String.valueOf(f)));
+//
+//                // Handle button 1 click
+//                objectDetectorHelper.setCurrentModel("offline_ocr.tflite");
+//                objectDetectorHelper.setupObjectDetector();
+//                objectDetectorHelper.setThreshold(f);
+//
+//                Log.d(TAG, "offline_ocr model Selected ...");
+//                doInference("offline_ocr");
+//
+//                // This method is invoked after the user finishes moving the SeekBar
+//                //Toast.makeText(MainActivity.this, "Seekbar value: " + seekBar.getProgress(), Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -286,6 +349,11 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
 
 
     }
+
+    private Bitmap resizeBitmap(Bitmap originalBitmap, int newWidth, int newHeight) {
+        return Bitmap.createScaledBitmap(originalBitmap, newWidth, newHeight, false);
+    }
+
 
     public Bitmap rotateBitmap(Bitmap sourceBitmap, float angle) {
         Matrix matrix = new Matrix();
@@ -317,6 +385,28 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
         return mediaDir != null && mediaDir.exists() ? mediaDir : context.getFilesDir();
     }
 
+    public static int getExifRotation(Context context, Uri imageUri) throws IOException {
+        if (imageUri == null) return 0;
+        InputStream inputStream = null;
+        try {
+            inputStream = context.getContentResolver().openInputStream(imageUri);
+            ExifInterface exifInterface = new ExifInterface(inputStream);
+            int orienttation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+            switch (orienttation) {
+                case ExifInterface.ORIENTATION_ROTATE_90:
+                    return 90;
+                case ExifInterface.ORIENTATION_ROTATE_180:
+                    return 180;
+                case ExifInterface.ORIENTATION_ROTATE_270:
+                    return 270;
+                default:
+                    return ExifInterface.ORIENTATION_UNDEFINED;
+            }
+        }finally {
+            //here to close the inputstream
+        }
+    }
+
     private int getOrientation(Bitmap bitmap) {
         try {
             // Convert Bitmap to ByteArray to read Exif information
@@ -326,7 +416,7 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
 
             // Use ExifInterface to read orientation
             ExifInterface exifInterface = new ExifInterface(new ByteArrayInputStream(bitmapData));
-            int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+            int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
 
             return orientation;
         } catch (IOException e) {
@@ -355,14 +445,16 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
 
             imgBitmap=uriToBitmap(image_uri);
 
-            Log.d(TAG, "Orientation: "+ getOrientation(bitmap));
+            try {
+                if(getExifRotation(getApplicationContext(),image_uri)==90){
+                    imgBitmap=rotateBitmap(imgBitmap,90);
 
-
-            if(getOrientation(bitmap)==0){
-                Log.d(TAG, "Orientation not required ");
-            }
-            else{
-                imgBitmap=rotateBitmap(imgBitmap,90);
+                }
+                else{
+                    Log.d(TAG, "Orientation not required ");
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
 
 
@@ -513,10 +605,6 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
 
                 }
             }
-
-
-
-
 
 
 
