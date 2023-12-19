@@ -87,9 +87,9 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
         aSwitchBox=findViewById(R.id.toggleSwitchBox);
         aSwitchDetectMeter=findViewById(R.id.tsDetectMeter);
 
-        aSwitchDetectMeter.setChecked(true);
+        aSwitchDetectMeter.setChecked(false);
 
-        meterFlag=true;
+        meterFlag=false;
         loadFlag=false;
 
         txtResult.setEnabled(false);
@@ -301,11 +301,18 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
                         Log.d(TAG, "Result Flag Value: "+resultFlag);
 
                         if (resultFlag.contains("reading")) {
-                            Log.d(TAG, "Meter Detected");
-                            lblStatus.setText(R.string.meter_detected);
+                            int val=seekBar.getProgress();
+
+                             float f=(float)val/100;
+
+                            lblStatus.setText(String.format("Confidence Level: %s", String.valueOf(f)));
+
                             // Handle button 1 click
                             objectDetectorHelper.setCurrentModel("offline_ocr.tflite");
+                            objectDetectorHelper.setThreshold(f);
                             objectDetectorHelper.setupObjectDetector();
+
+
                             Log.d(TAG, "offline_ocr model Selected ...");
                             doInference("offline_ocr");
 
@@ -316,8 +323,18 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
                     }
                     else{
 
+                        int val=seekBar.getProgress();
+
+                        float f=(float)val/100;
+
+                        lblStatus.setText(String.format("Confidence Level: %s", String.valueOf(f)));
+
+                        // Handle button 1 click
                         objectDetectorHelper.setCurrentModel("offline_ocr.tflite");
+                        objectDetectorHelper.setThreshold(f);
                         objectDetectorHelper.setupObjectDetector();
+
+
                         Log.d(TAG, "offline_ocr model Selected ...");
                         doInference("offline_ocr");
                     }
@@ -439,7 +456,6 @@ public class MainActivity extends AppCompatActivity implements ObjectDetectorHel
             image_uri = data.getData();
 
             loadFlag=true;
-
 
             Bitmap bitmap = uriToBitmap(image_uri);
 
